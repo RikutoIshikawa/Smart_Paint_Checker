@@ -1,17 +1,5 @@
 #=================================================================
-# １.インポート
-# ・streamlit（ver 1.29.0）：webアプリ開発用フレームワーク
-# ・streamlit_option_menu（ver 0.3.0）：マルチページ用ライブラリ
-# ・const.py：各設定用のパラメータをまとめたファイル
-# ・psd_tools（ver 1.9.32）：PSDファイルの解析用ライブラリ
-# ・PIL（ver 10.3.0）：画像編集用ライブラリ
-# ・Numpy（ver 1.24.4）：多次元配列の操作用ライブラリ
-# ・OpenCV（ver 4.10.0.84）：画像解析用ライブラリ
-# ・BytesIO：バイナリデータを扱うライブラリ
-# ・scipy（ver 1.9.1）：連続している領域ごとにラベル付けするライブラリ
-# ・Counter：リストの特定の要素をカウントするライブラリ
-# ・zipfile：zipファイルを作成するライブラリ
-# ・hashlib：ハッシュを生成するライブラリ
+# インポート
 #=================================================================
 import streamlit as st
 import psd_tools
@@ -27,21 +15,22 @@ import zipfile
 import hashlib
 
 #=================================================================
-# ２.各機能の関数
+# 各機能関数
 #=================================================================
 def SelectionColor_Display_System(psd, colors, thresholds, background):
-#psd：psdファイル、colors：表示するカラーリスト、thresholds：カラーの許容範囲リスト、background：背景色
+#仮引数：psdファイル、表示するカラーリスト、各カラーの許容範囲リスト、背景カラー
+    #背景カラーをRGB値へ変換
     if isinstance(background, str) and background.startswith("#"):
         background = background.lstrip('#')
         r = int(background[0:2], 16)
         g = int(background[2:4], 16)
         b = int(background[4:6], 16)
         background = (r, g, b)
-    #出力用イラストの準備
+    #出力画像の生成
     result_img = Image.new("RGBA", psd.composite().size, (background[0], background[1], background[2], 255))
-    #表示するカラーの数だけ繰り返し
+    #表示するカラー数だけ繰り返し
     for (color, threshold) in zip(colors, thresholds):
-        #カラーを16進数コードからRGBへ変換
+        #表示するカラーをRGB値へ変換
         if isinstance(color, str) and color.startswith("#"):
             color = color.lstrip('#')
             r = int(color[0:2], 16)
@@ -62,7 +51,7 @@ def SelectionColor_Display_System(psd, colors, thresholds, background):
                 else:
                     #透過度を持たない場合は全てのピクセルを取得
                     valid_pixels = np.ones(layer_np.shape[:2], dtype=bool)
-                #指定色との差を計算し、閾値内の色を一致とみなす
+                #指定カラーとの差を計算し、閾値内の色を一致とみなす
                 mask = (np.abs(layer_np[:, :, 0] - r) <= threshold[0]) & \
                        (np.abs(layer_np[:, :, 1] - g) <= threshold[1]) & \
                        (np.abs(layer_np[:, :, 2] - b) <= threshold[2]) & valid_pixels
@@ -73,8 +62,8 @@ def SelectionColor_Display_System(psd, colors, thresholds, background):
     return result_img 
 
 def SelectionLayers_Contour_System(psd, layers, threshold, color, contour_size, layer_display_switching, background_display_switching, background2):
-#layers：表示するレイヤ、threshold：二値化の閾値、color：輪郭線の色、contour_size：輪郭線の幅、
-#layer_display_switching：レイヤの表示・非表示、background_display_switching：背景の表示・非表示、background：背景色
+#仮引数：表示するレイヤー画像、二値化の閾値、輪郭線のカラー、輪郭線の幅、レイヤー画像の表示切替、背景の表示切替、背景カラー
+    #輪郭線のカラーと背景カラーをRGB値へ変換
     if isinstance(color, str) and color.startswith("#"):
         color = color.lstrip('#')
         r = int(color[0:2], 16)
@@ -87,19 +76,19 @@ def SelectionLayers_Contour_System(psd, layers, threshold, color, contour_size, 
         g = int(background2[2:4], 16)
         b = int(background2[4:6], 16)
         background2 = (r, g, b)
-    #出力用イラストの準備
+    #出力画像の生成
     background = Image.new("RGBA", psd.composite().size, (background2[0], background2[1], background2[2], 255))
-    #Numpy配列に変換
+    #レイヤー画像をNumpy配列に変換
     layers_np = np.array(layers, dtype=np.uint8)
     #RGBAからBGRに変換
     layers_bgr = cv2.cvtColor(layers_np, cv2.COLOR_RGBA2BGR)
     #グレースケールに変換
     layers_gray = cv2.cvtColor(layers_bgr, cv2.COLOR_BGR2GRAY)
-    #二値化（150を閾値に設定）
+    #二値化
     ret, binary = cv2.threshold(layers_gray, threshold, 255, cv2.THRESH_BINARY)
     #輪郭を検出
     contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    #全て白または黒のカラー画像を作成（BGR形式で初期化）
+    #全て白または黒のカラー画像を作成
     if color == (255, 255, 255):
         #背景は黒（輪郭は白）
         img_blank = np.zeros_like(layers_bgr, dtype=np.uint8)
@@ -108,7 +97,7 @@ def SelectionLayers_Contour_System(psd, layers, threshold, color, contour_size, 
         img_blank = np.ones_like(layers_bgr, dtype=np.uint8) * 255
     #輪郭を描画
     contour_img = cv2.drawContours(img_blank, contours, -1, color, contour_size)
-    #OpenCV画像をPillow形式に変換
+    #OpenCV形式からPillow形式に変換
     result_img = Image.fromarray(cv2.cvtColor(contour_img, cv2.COLOR_BGRA2RGBA))
     #輪郭以外を透過させる（R, G, B がすべて 255）の場合、アルファ値を 0 に設定
     datas = result_img.getdata()
@@ -129,7 +118,7 @@ def SelectionLayers_Contour_System(psd, layers, threshold, color, contour_size, 
             else:
                 new_data.append(item)
         result_img.putdata(new_data)
-    #輪郭とレイヤを合成
+    #輪郭とレイヤー画像を合成
     if layer_display_switching == "表示":
         result_img.paste(layers, (psd.left, psd.top), layers)
     if background_display_switching == "表示":
@@ -138,10 +127,7 @@ def SelectionLayers_Contour_System(psd, layers, threshold, color, contour_size, 
     return result_img
 
 def MissingPaint_Detection_System1(psd, selected_color, split_scale, line_scale):
-#psd：psdファイル
-#selected_color：背景色選択
-#split_scale：出力した画像をどれくらい分割するか
-#line_scale：矩形の線の太さ
+#仮引数：psdファイル、背景カラー、出力画像の分割数、矩形の線の太さ
     low_colors  = {"Red":(0, 0, 200), "Green":(0, 200, 0), "Blue":(250, 0, 0)}
     high_colors = {"Red":(0, 0, 255), "Green":(0, 255, 0), "Blue":(255, 0, 0)}
     bg_colors   = {"Red":(255, 0, 0, 255), "Green":(0, 255, 0, 255), "Blue":(0, 0, 255, 255)}
@@ -248,7 +234,7 @@ def MissingPaint_Detection_System1(psd, selected_color, split_scale, line_scale)
     return result_img_list
 
 def LineDrawingMistake_Detection_System1(psd, line, threshold):
-#psd：psdファイル、line：線画、threshold：エラー候補が近すぎる場合に、重複を1つに統合するための距離基準
+#仮引数：psdファイル、線画画像、検知箇所の統合判定距離
     #線画の色を緑色に変更
     line_np = np.array(line)
     line_color = [0, 255, 0, 255]
@@ -298,8 +284,7 @@ def LineDrawingMistake_Detection_System1(psd, line, threshold):
     return result_img
 
 def MissingPaint_Detection_System2(psd, color, tolerance, circle_radius, max_region_size):
-#psd：psdファイル、color：検知箇所カラー、tolerance：色の許容誤差、
-#circle_radius：円の半径、max_region_size：塗り漏れと判定する領域のサイズ
+#仮引数：psdファイル、検知箇所カラー、色の許容誤差、円の半径、塗り漏れと判定する領域のサイズ
     if isinstance(color, str) and color.startswith("#"):
         color = color.lstrip('#')
         r = int(color[0:2], 16)
@@ -338,7 +323,7 @@ def MissingPaint_Detection_System2(psd, color, tolerance, circle_radius, max_reg
     return result_img
 
 def LineDrawingMistake_Detection_System2(psd, line):
-#psd：psdファイル、line：線画
+#仮引数：psdファイル、線画画像
     #グレースケールに変換
     line_gray = line.convert("L") 
     #ノイズ除去
@@ -394,7 +379,7 @@ def LineDrawingMistake_Detection_System2(psd, line):
         return 0
 
 #=================================================================
-# ３.各設定
+# ページ、レイアウト設定
 # ・SET_PAGE_CONFIG：ページの設定
 # ・HIDE_ST_STYLE：レイアウトの調節
 # ・OPTION_MENU_CONFIG：タブの設定
@@ -431,20 +416,22 @@ st.markdown('''
 }</style>''', unsafe_allow_html=True)
     
 #=================================================================
-# ４.HOME
+# HOME画面
 #=================================================================
 if selected == 'HOME':
     st.markdown('''
-    <p class='my-text'>ツール概要</p>
+    <p class='my-text'>デジタルイラスト制作における課題と本研究の目的</p>
     
-    ##### デジタルイラスト制作における課題とこの研究の目的
-    ゲーム会社などのデジタルイラストを大量に扱う企業では、外部のイラスト制作会社にイラストの制作業務を委託することがある。  
-    そして、委託を受けた制作会社は完成したイラストを納品する前に、その品質を保証するため「塗り漏れ」、「はみ出し」、「消し忘れ」などのミスがないか細部までチェックする必要がある。 
-    しかし、従来は手作業で行われており、手間がかかるという課題があった。  
-    そこで本研究では、画像処理を用いて「塗り漏れ」、「はみ出し」、「消し忘れ」ミスを自動的に検知する、または発見をサポートする方式を提案する。  
-    さらに、これらの方式に基づき、イラストの着色チェックツール「Smart Paint Checker」を開発することで、ミスチェック作業の効率化を実現するとともに、クリエイターの負担軽減を図ることを目的としている。
-
-    <p class='my-text'>メンバー構成</p>
+    ゲーム会社など、デジタルイラストを大量に扱う企業では、外部のイラスト制作会社に業務を委託することがある。  
+    そして、委託を受けた制作会社は完成したイラストを納品する前に、品質を保証するため「塗り漏れ」「はみ出し」「消し忘れ」などのミスがないかを細部までチェックする必要がある。 
+    しかし、これらのチェック作業は従来、手作業で行われており、手間がかかるという課題が指摘されている。  
+    そこで本研究では、画像処理技術を用いて「塗り漏れ」「はみ出し」「消し忘れ」ミスを自動的に検知、または発見を支援する方式を提案する。  
+    さらに、これらの方式に基づいてイラストの着色チェックツール「Smart Paint Checker」を開発することで、ミスチェック作業の効率化とクリエイターの負担軽減を図ることを目的とする。
+    ''', unsafe_allow_html=True)
+    st.image('./Images/ミス一覧.png', width=700) 
+    
+    st.markdown('''
+    <p class='my-text'>開発体制</p>
     
     ##### 組織名
     東京電機大学 システムデザイン工学部 情報システム工学科 マルチメディアコンピューティング研究室
@@ -468,23 +455,31 @@ if selected == 'HOME':
     ''', unsafe_allow_html=True)
     
 #=================================================================
-# ５.機能詳細と使用例
+# 機能詳細と使用例画面
 #=================================================================
 if selected == '機能詳細と使用例':
     st.markdown('''
     <p class='my-text'>機能１：指定色表示システム</p>
-    <p class='box'>機能内容</p>''', unsafe_allow_html=True)
-    st.image('./Images/指定色表示_機能内容.png', width=850) 
+    <p class='box'>機能内容</p>
+    
+    イラストファイルとカラーを指定することで、イラスト内でそのカラーが使用されている箇所のみを表示する機能である。  
+    また、塗りの濃さが異なる場合を考慮し、RGB各値に許容範囲（±）を指定することや複数のカラーを同時に指定することも可能である。  
+    ''', unsafe_allow_html=True)
+    st.image('./Images/指定色表示_機能内容.png', width=700) 
     st.markdown('''<p class='box'>使用事例</p>''', unsafe_allow_html=True)
-    st.image('./Images/指定色表示_使用例.png', width=850) 
+    st.image('./Images/指定色表示_使用例.png', width=700) 
         
     st.markdown('''
     <p class='my-text'>機能２：指定レイヤ輪郭表示システム</p>
-    <p class='box'>機能内容</p>''', unsafe_allow_html=True)
-    st.image('./Images/指定レイヤ輪郭表示_機能内容.png', width=850) 
+    <p class='box'>機能内容</p>
+    
+    イラストファイルとレイヤーを指定することで、そのレイヤー画像と輪郭を表示する機能である。  
+    また、レイヤー画像を非表示にして輪郭のみを表示することや複数のレイヤーを同時に指定することも可能である。
+    ''', unsafe_allow_html=True)
+    st.image('./Images/指定レイヤ輪郭表示_機能内容.png', width=700) 
     st.markdown('''<p class='box'>使用事例</p>''', unsafe_allow_html=True)
-    st.image('./Images/指定レイヤ輪郭表示_使用例１.png', width=850) 
-    st.image('./Images/指定レイヤ輪郭表示_使用例２.png', width=850) 
+    st.image('./Images/指定レイヤ輪郭表示_使用例１.png', width=700) 
+    st.image('./Images/指定レイヤ輪郭表示_使用例２.png', width=700) 
     
     
     st.markdown('''
@@ -508,7 +503,7 @@ if selected == '機能詳細と使用例':
     st.markdown('''<p class='box'>特徴</p>''', unsafe_allow_html=True)
     
 #=================================================================
-# ６.ツールを使用する
+# ツールを使用する画面
 #=================================================================
 if selected == 'ツールを使用する':
     #========================================
@@ -522,34 +517,34 @@ if selected == 'ツールを使用する':
     functions = []
     if st.checkbox('指定色表示システム'):
         functions.append('SelectionColor_Display_System')
-    st.write('<span style="color:red;background:pink">：イラスト内で指定したカラーが使用されている箇所を表示する機能</span>'
+    st.write('<span style="color:red;background:pink">：イラスト内で指定したカラーが使用されている箇所を表示する</span>'
     ,unsafe_allow_html=True)
     if st.checkbox('指定レイヤ輪郭表示システム'):
         functions.append('SelectionLayers_Contour_System')
-    st.write('<span style="color:red;background:pink">：選択したレイヤの輪郭を抽出し表示する機能</span>'
+    st.write('<span style="color:red;background:pink">：指定したレイヤー画像の輪郭を抽出する</span>'
     ,unsafe_allow_html=True)
     if st.checkbox('塗り漏れ検知システム１'):
         functions.append('MissingPaint_Detection_System1')
-    st.write('<span style="color:red;background:pink">：イラスト内の「塗り漏れ」を検知する機能</span>'
+    st.write('<span style="color:red;background:pink">：イラスト内の「塗り漏れ」を検知する</span>'
     ,unsafe_allow_html=True)
     if st.checkbox('塗り漏れ検知システム２'):
         functions.append('MissingPaint_Detection_System2')
-    st.write('<span style="color:red;background:pink">：イラスト内の「塗り漏れ」を検知する機能</span>'
+    st.write('<span style="color:red;background:pink">：イラスト内の「塗り漏れ」を検知する</span>'
     ,unsafe_allow_html=True)
     if st.checkbox('消し忘れ検知システム１'):
         functions.append('LineDrawingMistake_Detection_System1')
-    st.write('<span style="color:red;background:pink">：線画の「消し忘れ」を検知する機能</span>'
+    st.write('<span style="color:red;background:pink">：線画の「消し忘れ」を検知する</span>'
     ,unsafe_allow_html=True)
     if st.checkbox('消し忘れ検知システム２'):
         functions.append('LineDrawingMistake_Detection_System2')
-    st.write('<span style="color:red;background:pink">：線画の「消し忘れ」を検知する機能</span>'
+    st.write('<span style="color:red;background:pink">：線画の「消し忘れ」を検知する</span>'
     ,unsafe_allow_html=True)
     
     #========================================
     # 「ファイルの選択」
     #========================================
     st.markdown('''<p class='my-text'>ファイルの選択</p>''', unsafe_allow_html=True)
-    #セッションの初期化（レイヤ一覧表示用）
+    #セッションの初期化（レイヤー一覧表示用）
     if "last_file_hash" not in st.session_state:
         st.session_state.last_file_hash = None
     if "name_list" not in st.session_state:
