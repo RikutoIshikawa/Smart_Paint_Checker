@@ -306,9 +306,9 @@ if selected == '機能詳細と使用例':
     イラストファイルとカラーを指定することで、イラスト内でそのカラーが使用されている箇所のみを表示する機能である。  
     また、塗りの濃さが異なる場合を考慮し、RGB各値に許容範囲（±）を指定することや複数のカラーを同時に指定することも可能である。  
     ''', unsafe_allow_html=True)
-    st.image('./Images/指定色表示_機能内容.png', width=700) 
-    st.markdown('''<p class='box'>使用事例</p>''', unsafe_allow_html=True)
-    st.image('./Images/指定色表示_使用例.png', width=700) 
+    st.image('./Images/指定カラー表示_機能内容.png', width=700) 
+    st.markdown('''<p class='box'>使用例</p>''', unsafe_allow_html=True)
+    st.image('./Images/指定カラー表示_使用例.png', width=700) 
     
     #機能２
     st.markdown('''
@@ -319,7 +319,7 @@ if selected == '機能詳細と使用例':
     また、レイヤー画像を非表示にして輪郭のみを表示することや複数のレイヤーを同時に指定することも可能である。
     ''', unsafe_allow_html=True)
     st.image('./Images/指定レイヤー輪郭表示_機能内容.png', width=700) 
-    st.markdown('''<p class='box'>使用事例</p>''', unsafe_allow_html=True)
+    st.markdown('''<p class='box'>使用例</p>''', unsafe_allow_html=True)
     st.image('./Images/指定レイヤー輪郭表示_使用例１.png', width=700) 
     st.image('./Images/指定レイヤー輪郭表示_使用例２.png', width=700) 
     
@@ -328,17 +328,20 @@ if selected == '機能詳細と使用例':
     <p class='my-text'>機能３：塗り漏れ検知システム</p>
     <p class='box'>機能内容</p>
     
+    イラストファイルを指定することで、新たな色の背景を追加し、透過した塗り漏れを検知して円で囲む機能である。  
+    また、背景色や円の大きさ、塗り漏れと判定する許容値を指定することも可能である。
     ''', unsafe_allow_html=True)
-    
-    st.markdown('''<p class='box'>使用事例</p>''', unsafe_allow_html=True)
+    st.image('./Images/塗り漏れ検知_機能内容.png', width=700) 
     
     #機能４
     st.markdown('''
     <p class='my-text'>機能４：消し忘れ検知システム</p>
     <p class='box'>機能内容</p>
     
+    イラストファイルと線画レイヤーを指定することで、線画の消し忘れ箇所を検知し円で囲む機能である。  
+    また、検知機能の強さを指定可能であり、値が低いほど厳しく検知出来る
     ''', unsafe_allow_html=True)
-    st.markdown('''<p class='box'>使用事例</p>''', unsafe_allow_html=True)
+    st.image('./Images/消し忘れ検知_機能内容.png', width=700) 
     
 #=================================================================
 # ツールを使用する画面
@@ -631,7 +634,7 @@ if selected == 'ツールを使用する':
                             st.markdown('''
                             <p class='my-text'>消し忘れ検知システム</p>
                             <p class='box'>各値の調整</p>''', unsafe_allow_html=True)
-                            threshold2 = st.slider('###### 「消し忘れ」判定の細かさを調整できます。',1,300,200)
+                            threshold2 = st.slider('###### 各検知箇所を統合する距離を調整できます。',1,300,200)
                             #機能の実行
                             result_img4 = LineDrawingMistake_Detection_System(psd, line_img, threshold2)
                             st.markdown('''<p class='box2'>消し忘れ検知システムの出力結果</p>''', unsafe_allow_html=True)
