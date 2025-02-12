@@ -1,0 +1,8 @@
+const
+streamlit==1.29.0
+streamlit_option_menu==0.3.0
+psd_tools==1.9.32
+Pillow==10.3.0
+numpy==1.24.4
+opencv-python==4.10.0.84
+scipy==1.9.1

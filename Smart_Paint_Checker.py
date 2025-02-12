@@ -1,16 +1,15 @@
 #=================================================================
 # インポート
 #=================================================================
-import streamlit as st
-import psd_tools
 import const
+import streamlit as st
 from streamlit_option_menu import option_menu
+import psd_tools
 from PIL import Image, ImageDraw
 import numpy as np
 import cv2
-from io import BytesIO
 from scipy.ndimage import label
-from collections import Counter
+from io import BytesIO
 import zipfile
 import hashlib
 
